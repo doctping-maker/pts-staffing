@@ -87,6 +87,29 @@ tr:hover td{background:var(--blue-bg)}
 .plan-action.need{background:var(--red-l);color:var(--red)}
 .plan-action.ok{background:var(--gray-100);color:var(--gray-500)}
 
+/* Shift badges */
+.shift-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.shift-badge{text-align:center;padding:6px 4px;border-radius:6px;font-size:11px;font-weight:600}
+.shift-am{background:#dbeafe;color:#1d4ed8}
+.shift-pm{background:#fef3c7;color:#b45309}
+.shift-eve{background:#ede9fe;color:#6d28d9}
+.shift-badge .shift-num{font-size:18px;font-weight:800;display:block;margin-top:2px}
+
+/* Shift summary cards */
+.shift-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.shift-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;text-align:center;position:relative;overflow:hidden}
+.shift-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:4px}
+.shift-card.am::before{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.shift-card.pm::before{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.shift-card.eve::before{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}
+.shift-card .shift-label{font-size:13px;font-weight:600;color:var(--gray-500);margin-bottom:4px}
+.shift-card .shift-time{font-size:11px;color:var(--gray-400)}
+.shift-card .shift-rn{font-size:36px;font-weight:800;margin:8px 0}
+.shift-card.am .shift-rn{color:#2563eb}
+.shift-card.pm .shift-rn{color:#d97706}
+.shift-card.eve .shift-rn{color:#7c3aed}
+.shift-card .shift-pts{font-size:12px;color:var(--gray-500)}
+
 /* Controls */
 .controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
 select,input[type=date],input[type=number]{padding:8px 12px;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;background:#fff;color:var(--gray-700)}
@@ -324,19 +347,53 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
 
   <div class="kpi-row" id="planKPI"></div>
 
+  <!-- Shift Summary Cards -->
+  <div class="shift-summary" id="shiftSummary">
+    <div class="shift-card am">
+      <div class="shift-label">Morning Shift</div>
+      <div class="shift-time">08:00 - 12:30</div>
+      <div class="shift-rn" id="shiftAmRn">-</div>
+      <div class="shift-pts" id="shiftAmPts">-</div>
+    </div>
+    <div class="shift-card pm">
+      <div class="shift-label">Afternoon Shift</div>
+      <div class="shift-time">12:30 - 17:00</div>
+      <div class="shift-rn" id="shiftPmRn">-</div>
+      <div class="shift-pts" id="shiftPmPts">-</div>
+    </div>
+    <div class="shift-card eve">
+      <div class="shift-label">Evening Shift</div>
+      <div class="shift-time">17:00 - 20:00</div>
+      <div class="shift-rn" id="shiftEveRn">-</div>
+      <div class="shift-pts" id="shiftEvePts">-</div>
+    </div>
+  </div>
+
+  <!-- Hourly Charts -->
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title"><span class="icon">⏰</span> Hourly Patient Arrival (All Clinics)</div>
+      <canvas id="chartHourlyArrive" height="250"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📈</span> Concurrent Patients Present (60-min service)</div>
+      <canvas id="chartConcurrent" height="250"></canvas>
+    </div>
+  </div>
+
   <div class="planner" id="plannerOutput" style="display:none">
-    <div class="planner-title">Staffing Recommendation (OPD + IPD)</div>
+    <div class="planner-title">Staffing Recommendation by Shift (OPD + IPD)</div>
     <div class="planner-grid" id="planCards"></div>
   </div>
 
   <div class="grid-2" style="margin-top:16px">
     <div class="card">
-      <div class="card-title"><span class="icon">📈</span> Predicted Volume by Clinic</div>
-      <canvas id="chartPlanVol" height="280"></canvas>
+      <div class="card-title"><span class="icon">📊</span> RN by Shift & Clinic</div>
+      <canvas id="chartPlanRN" height="280"></canvas>
     </div>
     <div class="card">
-      <div class="card-title"><span class="icon">👩‍⚕️</span> RN Allocation (OPD + IPD)</div>
-      <canvas id="chartPlanRN" height="280"></canvas>
+      <div class="card-title"><span class="icon">👩‍⚕️</span> Predicted Volume by Clinic</div>
+      <canvas id="chartPlanVol" height="280"></canvas>
     </div>
   </div>
 </div>
@@ -573,6 +630,86 @@ function getDifficulty(wipct){return wipct<30?'Easy':wipct<50?'Medium':'Hard'}
 function diffBadge(d){const cls=d==='Easy'?'badge-easy':d==='Medium'?'badge-med':'badge-hard';return `<span class="badge ${cls}">${d}</span>`}
 function getPoolGroup(c){for(const[g,cs]of Object.entries(POOL_GROUPS)){if(cs.includes(c))return g}return'?'}
 
+// ===== SHIFT DISTRIBUTION (Real data: 245 days, Patient_Count_By_Department) =====
+// AM = 08:00-12:30, PM = 12:30-17:00, EVE = 17:00-20:00
+const SHIFT_PCT = {
+  BEAUTY:{AM:54.4,PM:40.1,EVE:5.6}, CAR:{AM:52.3,PM:37.2,EVE:10.6},
+  DEN:{AM:41.0,PM:41.7,EVE:17.4},   ENT:{AM:50.0,PM:33.3,EVE:16.7},
+  EYE:{AM:50.7,PM:26.2,EVE:23.1},   GI:{AM:49.9,PM:46.0,EVE:4.0},
+  MED:{AM:57.9,PM:28.3,EVE:13.9},   NEURO:{AM:63.2,PM:35.1,EVE:1.7},
+  ONCO:{AM:53.8,PM:33.5,EVE:12.7},  ORT:{AM:52.7,PM:32.9,EVE:14.4},
+  PED:{AM:48.0,PM:34.1,EVE:17.9},   PHS:{AM:39.9,PM:36.3,EVE:23.8},
+  SSO:{AM:56.9,PM:43.1,EVE:0.0},    SUR:{AM:46.5,PM:35.0,EVE:18.5},
+  WNC:{AM:72.3,PM:27.5,EVE:0.2},    WOMAN:{AM:51.3,PM:41.7,EVE:7.0}
+};
+const SHIFT_AVG = {AM:53.8, PM:33.5, EVE:12.7};
+
+// Hourly sub-distribution within each shift (for chart)
+const HOURLY_AM  = {8:0.18, 9:0.26, 10:0.26, 11:0.20, 12:0.10};
+const HOURLY_PM  = {12:0.10, 13:0.28, 14:0.27, 15:0.20, 16:0.15};
+const HOURLY_EVE = {17:0.50, 18:0.35, 19:0.15};
+
+const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19];
+const SHIFTS = {
+  AM:  {label:'Morning',   hours:[8,9,10,11],      start:8,  end:12, color:'#3b82f6'},
+  PM:  {label:'Afternoon', hours:[12,13,14,15,16],  start:12, end:17, color:'#f59e0b'},
+  EVE: {label:'Evening',   hours:[17,18,19],        start:17, end:20, color:'#8b5cf6'}
+};
+const SHIFT_HOURS = {AM:4.5, PM:4.5, EVE:3};
+
+// Get per-clinic shift patient counts
+function getShiftPatients(clinic, dailyVol) {
+  const pct = SHIFT_PCT[clinic] || SHIFT_AVG;
+  return {AM:Math.round(dailyVol*pct.AM/100), PM:Math.round(dailyVol*pct.PM/100), EVE:Math.round(dailyVol*pct.EVE/100)};
+}
+
+// Compute hourly arrivals for one clinic using real shift distribution
+function getHourlyArrivals(dailyTotal, clinic) {
+  const pct = SHIFT_PCT[clinic] || SHIFT_AVG;
+  const amT=dailyTotal*pct.AM/100, pmT=dailyTotal*pct.PM/100, eveT=dailyTotal*pct.EVE/100;
+  return HOURS.map(h => {
+    if(HOURLY_AM[h])  return Math.round(amT * HOURLY_AM[h]);
+    if(HOURLY_PM[h])  return Math.round(pmT * HOURLY_PM[h]);
+    if(HOURLY_EVE[h]) return Math.round(eveT * HOURLY_EVE[h]);
+    return 0;
+  });
+}
+
+// Aggregate hourly for all clinics
+function getAllClinicsHourly(clinicVolumes) {
+  const totals = HOURS.map(()=>0);
+  for(const{clinic,vol} of clinicVolumes){
+    const arr = getHourlyArrivals(vol, clinic);
+    arr.forEach((v,i)=>totals[i]+=v);
+  }
+  return totals;
+}
+
+// Concurrent patients at each hour (service time 60 min)
+function getConcurrent(arrivals) {
+  return HOURS.map((h,i) => {
+    const cur = arrivals[i]||0;
+    const prev = i>0 ? arrivals[i-1] : 0;
+    return cur + prev;
+  });
+}
+
+// Compute shift RN using REAL per-clinic shift distribution
+function calcShiftRN(dailyVol, ratio, bufferPct, clinic) {
+  const sp = getShiftPatients(clinic||'MED', dailyVol);
+  // Peak factor within shift (peak hour vs avg hour)
+  const peakF = {AM:1.35, PM:1.15, EVE:1.2};
+  const result = {};
+  for(const shift of ['AM','PM','EVE']){
+    const pts = sp[shift];
+    const avgConc = pts / SHIFT_HOURS[shift]; // avg concurrent per hour
+    const peakConc = avgConc * peakF[shift];
+    const rnRaw = peakConc / ratio;
+    result[shift] = Math.max(1, Math.round(rnRaw * (1+bufferPct/100)));
+  }
+  return result;
+}
+
 // ===== CHARTS REGISTRY =====
 const charts = {};
 function getChart(id){return charts[id]}
@@ -804,8 +941,8 @@ function initDashboard(){
   document.getElementById('kpiRow').innerHTML = `
     <div class="kpi blue"><div class="kpi-label">Total OPD Visits (14M)</div><div class="kpi-value">${fmt(grandTotal)}</div><div class="kpi-sub">16 Clinics, Jan 2025 - Feb 2026</div><div class="kpi-icon">📊</div></div>
     <div class="kpi green"><div class="kpi-label">Avg Daily OPD Volume</div><div class="kpi-value">${fmt(avgDaily)}</div><div class="kpi-sub">All clinics combined</div><div class="kpi-icon">📈</div></div>
-    <div class="kpi orange"><div class="kpi-label">RN/Day (Weekday)</div><div class="kpi-value">${totalRN}</div><div class="kpi-sub">With walk-in buffer</div><div class="kpi-icon">👩‍⚕️</div></div>
-    <div class="kpi red"><div class="kpi-label">RN/Day (Weekend)</div><div class="kpi-value">${weekendRN}</div><div class="kpi-sub">+${Math.round((weekendRN/totalRN-1)*100)}% surge</div><div class="kpi-icon">🔥</div></div>
+    <div class="kpi orange"><div class="kpi-label">OPD Peak RN (AM Shift)</div><div class="kpi-value">${totalRN}</div><div class="kpi-sub">Weekday morning shift</div><div class="kpi-icon">👩‍⚕️</div></div>
+    <div class="kpi red"><div class="kpi-label">OPD Peak RN (WE AM)</div><div class="kpi-value">${weekendRN}</div><div class="kpi-sub">Weekend morning shift</div><div class="kpi-icon">🔥</div></div>
     <div class="kpi purple"><div class="kpi-label">Walk-in Ratio</div><div class="kpi-value">41%</div><div class="kpi-sub">System-wide average</div><div class="kpi-icon">🎯</div></div>
   `;
 
@@ -847,18 +984,20 @@ function initDashboard(){
   runSim();
 }
 
+// Compute total RN for peak shift (AM) using shift model
 function computeTotalRN(dayType){
-  let total = 0;
+  let totalAM = 0;
   CLINICS.forEach(c=>{
     const wd = WEEKDAY[c]||{};
     let avg;
-    if(dayType==='weekend'){avg=(wd.Sat||0)+(wd.Sun||0);avg/=2}
+    if(dayType==='weekend'){avg=((wd.Sat||0)+(wd.Sun||0))/2}
     else{avg=((wd.Mon||0)+(wd.Tue||0)+(wd.Wed||0)+(wd.Thu||0)+(wd.Fri||0))/5}
     const ratio = RATIOS[c]||50;
     const buffer = getBuffer(RAW.clinics[c].wipct);
-    total += (avg/ratio)*(1+buffer/100);
+    const shiftRN = calcShiftRN(Math.round(avg), ratio, buffer, c);
+    totalAM += shiftRN.AM;
   });
-  return Math.round(total);
+  return Math.round(totalAM);
 }
 
 function buildSummaryTable(){
@@ -914,7 +1053,7 @@ function buildSummaryTable(){
   });
 }
 
-// ===== DAILY PLANNER =====
+// ===== DAILY PLANNER (SHIFT-BASED MODEL) =====
 function generatePlan(){
   const dayType = document.getElementById('planDayType').value;
   const scenario = document.getElementById('planScenario').value;
@@ -924,46 +1063,56 @@ function generatePlan(){
   if(scenario==='flu') scenarioMult=1.15;
   if(scenario==='lowdoc') scenarioMult=0.8;
 
-  // Use actual day-of-week for weekday prediction (more accurate)
-  const dow = isNaN(selDate.getTime()) ? -1 : selDate.getDay(); // 0=Sun..6=Sat
+  // Use actual day-of-week for weekday prediction
+  const dow = isNaN(selDate.getTime()) ? -1 : selDate.getDay();
   const dowName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dow] || null;
 
+  // Calculate per-clinic results with shift breakdown
   const results = CLINICS.map(c=>{
     const wd = WEEKDAY[c]||{};
     let predicted;
     if(dayType==='holiday'){
-      // Holidays behave like weekends but +10% more
       predicted=((wd.Sat||0)+(wd.Sun||0))/2*1.1;
     } else if(dayType==='weekend'){
-      // Use exact day if available (Sat vs Sun have different patterns)
       if(dowName==='Sat') predicted=wd.Sat||0;
       else if(dowName==='Sun') predicted=wd.Sun||0;
       else predicted=((wd.Sat||0)+(wd.Sun||0))/2;
     } else {
-      // Weekday: use exact day if available
       if(dowName && ['Mon','Tue','Wed','Thu','Fri'].includes(dowName)) predicted=wd[dowName]||0;
       else predicted=((wd.Mon||0)+(wd.Tue||0)+(wd.Wed||0)+(wd.Thu||0)+(wd.Fri||0))/5;
     }
     predicted = Math.round(predicted * scenarioMult);
     const ratio=RATIOS[c]||50;
     const buf=getBuffer(RAW.clinics[c].wipct);
-    const rnBase = predicted/ratio;
-    const rnNeeded = Math.ceil(rnBase*(1+buf/100));
-    const rnFixed = Math.ceil(rnBase);
-    return {clinic:c,predicted,ratio,buf,rnBase:Math.round(rnBase*10)/10,rnNeeded,rnFixed,pool:getPoolGroup(c),wipct:RAW.clinics[c].wipct};
+
+    // Shift-based RN calculation (using real per-clinic shift %)
+    const shiftRN = calcShiftRN(predicted, ratio, buf, c);
+    const totalShiftRN = shiftRN.AM + shiftRN.PM + shiftRN.EVE;
+
+    return {
+      clinic:c, predicted, ratio, buf,
+      shiftRN, // {AM, PM, EVE}
+      rnAM: shiftRN.AM, rnPM: shiftRN.PM, rnEVE: shiftRN.EVE,
+      rnPeak: shiftRN.AM, // AM is always peak
+      pool:getPoolGroup(c), wipct:RAW.clinics[c].wipct
+    };
   });
 
   const totalPred = results.reduce((s,r)=>s+r.predicted,0);
-  const totalRN = results.reduce((s,r)=>s+r.rnNeeded,0);
-  const totalFixed = results.reduce((s,r)=>s+r.rnFixed,0);
-  const poolRN = totalRN - totalFixed;
+  const totalAM = results.reduce((s,r)=>s+r.rnAM,0);
+  const totalPM = results.reduce((s,r)=>s+r.rnPM,0);
+  const totalEVE = results.reduce((s,r)=>s+r.rnEVE,0);
 
-  // IPD staffing for this day
-  const ipdBeds = IPD_DATA.avg_beds_2025; // Use average
+  // Hourly data for all clinics combined (using per-clinic shift %)
+  const clinicVolumes = results.map(r => ({clinic: r.clinic, vol: r.predicted}));
+  const allArrivals = getAllClinicsHourly(clinicVolumes);
+  const allConcurrent = getConcurrent(allArrivals);
+
+  // IPD staffing
+  const ipdBeds = IPD_DATA.avg_beds_2025;
   const ipdRN = calcIpdRn(ipdBeds);
-  const totalOpdIpd = totalRN + ipdRN;
 
-  // Build context label
+  // Context labels
   const holName = isNaN(selDate.getTime()) ? null : getHolidayName(selDate);
   const thaiDate = isNaN(selDate.getTime()) ? '' : selDate.toLocaleDateString('th-TH',{weekday:'short',day:'numeric',month:'short',year:'2-digit'});
   const dayLabel = dayType==='holiday' ? (holName||'Holiday') : dayType==='weekend' ? (dowName==='Sat'?'Saturday':'Sunday') : (dowName||'Weekday');
@@ -972,44 +1121,117 @@ function generatePlan(){
   // KPIs
   document.getElementById('planKPI').innerHTML = `
     <div class="kpi blue"><div class="kpi-label">Predicted OPD Total</div><div class="kpi-value">${fmt(totalPred)}</div><div class="kpi-sub">${thaiDate} (${dayLabel})${scenarioLabel}</div></div>
-    <div class="kpi green"><div class="kpi-label">OPD RN Needed</div><div class="kpi-value">${totalRN}</div><div class="kpi-sub">Including ${(totalRN-totalFixed)} buffer RN</div></div>
-    <div class="kpi orange"><div class="kpi-label">IPD RN Required</div><div class="kpi-value">${ipdRN}</div><div class="kpi-sub">Per shift (${IPD_DATA.avg_beds_2025} beds avg)</div></div>
-    <div class="kpi purple"><div class="kpi-label">Total RN (OPD+IPD)</div><div class="kpi-value">${totalOpdIpd}</div><div class="kpi-sub">Combined concurrent</div></div>
+    <div class="kpi green"><div class="kpi-label">OPD RN (Peak AM)</div><div class="kpi-value">${totalAM}</div><div class="kpi-sub">Morning shift 08-12:30</div></div>
+    <div class="kpi orange"><div class="kpi-label">IPD RN/Shift</div><div class="kpi-value">${ipdRN}</div><div class="kpi-sub">${IPD_DATA.avg_beds_2025} beds, 3 shifts</div></div>
+    <div class="kpi purple"><div class="kpi-label">Total AM Peak (OPD+IPD)</div><div class="kpi-value">${totalAM + ipdRN}</div><div class="kpi-sub">Max concurrent staff needed</div></div>
   `;
 
-  // Plan cards
-  results.sort((a,b)=>b.rnNeeded-a.rnNeeded);
+  // Shift Summary Cards
+  document.getElementById('shiftAmRn').textContent = totalAM + ' RN';
+  document.getElementById('shiftAmPts').textContent = `Peak concurrent: ${Math.max(...allConcurrent.slice(0,5))} pts | +${ipdRN} IPD`;
+  document.getElementById('shiftPmRn').textContent = totalPM + ' RN';
+  document.getElementById('shiftPmPts').textContent = `Peak concurrent: ${Math.max(...allConcurrent.slice(5,10))} pts | +${ipdRN} IPD`;
+  document.getElementById('shiftEveRn').textContent = totalEVE + ' RN';
+  document.getElementById('shiftEvePts').textContent = `Peak concurrent: ${Math.max(...allConcurrent.slice(10))} pts | +${ipdRN} IPD`;
+
+  // Hourly Arrival Chart
+  const shiftColors = HOURS.map(h => h<12 ? 'rgba(59,130,246,0.7)' : h<17 ? 'rgba(245,158,11,0.7)' : 'rgba(139,92,246,0.7)');
+  makeChart('chartHourlyArrive',{
+    type:'bar',
+    data:{
+      labels:HOURS.map(h=>`${String(h).padStart(2,'0')}:00`),
+      datasets:[{
+        label:'Patient Arrivals',
+        data:allArrivals,
+        backgroundColor:shiftColors,
+        borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`${ctx.raw} patients arrive`}}
+      },
+      scales:{y:{beginAtZero:true,title:{display:true,text:'Patients/Hour'}}}
+    }
+  });
+
+  // Concurrent Patient Chart (line + area with shift zones)
+  makeChart('chartConcurrent',{
+    type:'line',
+    data:{
+      labels:HOURS.map(h=>`${String(h).padStart(2,'0')}:00`),
+      datasets:[
+        {
+          label:'Concurrent Patients',
+          data:allConcurrent,
+          borderColor:'#ef4444',
+          backgroundColor:'rgba(239,68,68,0.1)',
+          fill:true,
+          tension:0.3,
+          pointRadius:5,
+          pointBackgroundColor:HOURS.map(h => h<12 ? '#3b82f6' : h<17 ? '#f59e0b' : '#8b5cf6'),
+          borderWidth:2
+        },
+        {
+          label:'Arrivals',
+          data:allArrivals,
+          borderColor:'#94a3b8',
+          borderDash:[5,5],
+          tension:0.3,
+          pointRadius:3,
+          borderWidth:1.5,
+          fill:false
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{position:'top'},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw} patients`}}
+      },
+      scales:{y:{beginAtZero:true,title:{display:true,text:'Patients Present'}}}
+    }
+  });
+
+  // Plan cards - now with shift breakdown
+  results.sort((a,b)=>b.rnAM-a.rnAM);
   document.getElementById('plannerOutput').style.display='block';
   document.getElementById('planCards').innerHTML = results.map(r=>{
-    const status = r.rnNeeded >= 5 ? 'deficit' : r.rnNeeded <= 1 ? 'surplus' : '';
-    const action = r.rnNeeded >= 5 ? `<div class="plan-action need">High Priority - ${r.rnNeeded} RN needed</div>` :
-                   r.rnNeeded <= 1 ? `<div class="plan-action send">Low demand - may share RN</div>` :
-                   `<div class="plan-action ok">Normal staffing</div>`;
+    const status = r.rnAM >= 5 ? 'deficit' : r.rnAM <= 1 ? 'surplus' : '';
     return `<div class="plan-card ${status}">
       <div class="plan-clinic">${r.clinic}</div>
-      <div class="plan-row"><span>Predicted</span><span class="plan-val">${r.predicted} patients</span></div>
-      <div class="plan-row"><span>Ratio</span><span class="plan-val">1:${r.ratio}</span></div>
-      <div class="plan-row"><span>Buffer</span><span class="plan-val">+${r.buf}% (WI ${r.wipct}%)</span></div>
-      <div class="plan-row"><span>RN Required</span><span class="plan-val" style="font-size:16px;color:${r.rnNeeded>=5?'var(--red)':'var(--green)'}">${r.rnNeeded}</span></div>
-      ${action}
+      <div class="plan-row"><span>Predicted Daily</span><span class="plan-val">${r.predicted} pts</span></div>
+      <div class="plan-row"><span>Ratio / Buffer</span><span class="plan-val">1:${r.ratio} +${r.buf}%</span></div>
+      <div class="shift-row">
+        <div class="shift-badge shift-am">AM<span class="shift-num">${r.rnAM}</span></div>
+        <div class="shift-badge shift-pm">PM<span class="shift-num">${r.rnPM}</span></div>
+        <div class="shift-badge shift-eve">EVE<span class="shift-num">${r.rnEVE}</span></div>
+      </div>
     </div>`;
   }).join('');
 
-  // Charts
-  const sorted = [...results].sort((a,b)=>b.predicted-a.predicted);
+  // Charts - RN by shift stacked
+  const sorted = [...results].sort((a,b)=>b.rnAM-a.rnAM);
+  makeChart('chartPlanRN',{
+    type:'bar',
+    data:{
+      labels:sorted.map(r=>r.clinic),
+      datasets:[
+        {label:'AM (08-12:30)',data:sorted.map(r=>r.rnAM),backgroundColor:'rgba(59,130,246,.7)',borderRadius:4},
+        {label:'PM (12:30-17)',data:sorted.map(r=>r.rnPM),backgroundColor:'rgba(245,158,11,.6)',borderRadius:4},
+        {label:'EVE (17-20)',data:sorted.map(r=>r.rnEVE),backgroundColor:'rgba(139,92,246,.5)',borderRadius:4}
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}
+  });
+
   makeChart('chartPlanVol',{
     type:'bar',
     data:{labels:sorted.map(r=>r.clinic),datasets:[{label:'Predicted Volume',data:sorted.map(r=>r.predicted),backgroundColor:sorted.map((_,i)=>CLINIC_COLORS[i%16]),borderRadius:4}]},
     options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
-  });
-
-  makeChart('chartPlanRN',{
-    type:'bar',
-    data:{labels:sorted.map(r=>r.clinic),datasets:[
-      {label:'Base RN',data:sorted.map(r=>r.rnFixed),backgroundColor:'rgba(59,130,246,.7)',borderRadius:4},
-      {label:'Buffer RN',data:sorted.map(r=>r.rnNeeded-r.rnFixed),backgroundColor:'rgba(249,115,22,.5)',borderRadius:4}
-    ]},
-    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}
   });
 }
 
