@@ -127,6 +127,16 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
 
 /* Scrollbar */
 ::-webkit-scrollbar{height:6px;width:6px}::-webkit-scrollbar-track{background:var(--gray-100)}::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+
+/* Hospital Overview - Payor Breakdown */
+.payor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.payor-card{background:linear-gradient(135deg,var(--blue-bg),#fff);border:1px solid var(--blue);border-radius:var(--radius-sm);padding:16px;text-align:center}
+.payor-card.general{border-color:var(--green);background:linear-gradient(135deg,var(--green-l),#fff)}
+.payor-card.insurance{border-color:var(--orange);background:linear-gradient(135deg,var(--orange-l),#fff)}
+.payor-card.sw{border-color:var(--purple);background:linear-gradient(135deg,var(--purple-l),#fff)}
+.payor-name{font-weight:600;color:var(--gray-700);margin-bottom:4px}
+.payor-num{font-size:24px;font-weight:700;color:var(--gray-900)}
+.payor-pct{font-size:13px;color:var(--gray-500)}
 </style>
 </head>
 <body>
@@ -136,7 +146,7 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
 <div class="header">
   <div>
     <h1>AI Pool Staffing System</h1>
-    <div class="sub">Payathai Sriracha Hospital - OPD 16 Clinics</div>
+    <div class="sub">Payathai Sriracha Hospital - OPD + IPD Combined View</div>
   </div>
   <div class="header-right">
     <div class="date-display" id="dateDisplay"></div>
@@ -146,7 +156,8 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
 
 <!-- TABS -->
 <div class="tabs">
-  <button class="tab active" data-tab="dashboard">Dashboard</button>
+  <button class="tab active" data-tab="overview">Hospital Overview</button>
+  <button class="tab" data-tab="dashboard">OPD Dashboard</button>
   <button class="tab" data-tab="planner">Daily Planner</button>
   <button class="tab" data-tab="pool">Pool Transfer</button>
   <button class="tab" data-tab="trends">Trends & Analytics</button>
@@ -154,8 +165,100 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
   <button class="tab" data-tab="workflow">Workflow Guide</button>
 </div>
 
-<!-- TAB 1: DASHBOARD -->
-<div class="tab-content active" id="tab-dashboard">
+<!-- TAB 1: HOSPITAL OVERVIEW -->
+<div class="tab-content active" id="tab-overview">
+  <div class="kpi-row" id="overviewKPI"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="icon">📊</span> OPD Visit/Day Trend (2024-2026)</div>
+      <canvas id="chartOpdTrend" height="260"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🛏️</span> IPD Admit & Bed-Day Trend</div>
+      <canvas id="chartIpdTrend" height="260"></canvas>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="icon">💳</span> OPD Payor Mix (2025 Avg - Visit/Day)</div>
+      <div class="payor-grid">
+        <div class="payor-card general">
+          <div class="payor-name">General</div>
+          <div class="payor-num">331</div>
+          <div class="payor-pct">47.7%</div>
+        </div>
+        <div class="payor-card insurance">
+          <div class="payor-name">Insurance</div>
+          <div class="payor-num">131</div>
+          <div class="payor-pct">18.9%</div>
+        </div>
+        <div class="payor-card sw">
+          <div class="payor-name">Social Sec.</div>
+          <div class="payor-num">657</div>
+          <div class="payor-pct">94.8%*</div>
+        </div>
+        <div class="payor-card" style="border-color:var(--gray-300);background:var(--gray-50)">
+          <div class="payor-name">Other</div>
+          <div class="payor-num">74</div>
+          <div class="payor-pct">10.7%</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--gray-500)">* Including ประกันสังคม (Social Security). Total OPD: ~1,193/day avg 2025 (exc. mobile)</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">👩‍⚕️</span> Combined OPD + IPD Staffing (RN/Day)</div>
+      <div class="tbl-wrap">
+        <table style="font-size:13px">
+          <tr>
+            <td style="padding:8px 12px;font-weight:600">OPD (16 Clinics)</td>
+            <td style="padding:8px 12px;text-align:right;font-weight:700;color:var(--blue)">~58</td>
+            <td style="padding:8px 12px;color:var(--gray-500);font-size:12px">Weekday</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;font-weight:600">IPD (Ward + ICU)</td>
+            <td style="padding:8px 12px;text-align:right;font-weight:700;color:var(--orange)">~17</td>
+            <td style="padding:8px 12px;color:var(--gray-500);font-size:12px">Per shift (3 shifts)</td>
+          </tr>
+          <tr style="background:var(--blue-bg)">
+            <td style="padding:8px 12px;font-weight:600">Total RN/Day</td>
+            <td style="padding:8px 12px;text-align:right;font-weight:700;color:var(--green)">~75</td>
+            <td style="padding:8px 12px;color:var(--gray-500);font-size:12px">Concurrent</td>
+          </tr>
+          <tr>
+            <td colspan="3" style="padding:8px 12px;font-size:11px;color:var(--gray-500)"><strong>Notes:</strong> IPD ratio 1 RN : 8 adult patients, 1 RN : 6 pediatric. Based on 131 occupied beds/day avg.</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">📈</span> Monthly Detail: OPD Visit/Day + IPD Stats</div>
+    <div class="tbl-wrap">
+      <table id="tblOverview">
+        <thead>
+          <tr>
+            <th data-col="month">Month</th>
+            <th data-col="opd_visit" class="num">OPD Visit/Day</th>
+            <th data-col="opd_rn" class="num">OPD RN</th>
+            <th data-col="ipd_admit" class="num">IPD Admit/Day</th>
+            <th data-col="ipd_bed" class="num">IPD Bed/Day</th>
+            <th data-col="ipd_rn" class="num">IPD RN*</th>
+            <th data-col="total_rn" class="num">Total RN</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:8px;font-size:11px;color:var(--gray-500)">* IPD RN calculated at 1:8 ratio (adult). Pediatric beds at 1:6 ratio. 3 shifts/day.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: OPD DASHBOARD -->
+<div class="tab-content" id="tab-dashboard">
   <div class="kpi-row" id="kpiRow"></div>
   <div class="grid-2">
     <div class="card">
@@ -189,7 +292,7 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
   </div>
 </div>
 
-<!-- TAB 2: DAILY PLANNER -->
+<!-- TAB 3: DAILY PLANNER -->
 <div class="tab-content" id="tab-planner">
   <div class="controls">
     <div class="ctrl-group">
@@ -222,7 +325,7 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
   <div class="kpi-row" id="planKPI"></div>
 
   <div class="planner" id="plannerOutput" style="display:none">
-    <div class="planner-title">Staffing Recommendation</div>
+    <div class="planner-title">Staffing Recommendation (OPD + IPD)</div>
     <div class="planner-grid" id="planCards"></div>
   </div>
 
@@ -232,13 +335,13 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
       <canvas id="chartPlanVol" height="280"></canvas>
     </div>
     <div class="card">
-      <div class="card-title"><span class="icon">👩‍⚕️</span> RN Allocation</div>
+      <div class="card-title"><span class="icon">👩‍⚕️</span> RN Allocation (OPD + IPD)</div>
       <canvas id="chartPlanRN" height="280"></canvas>
     </div>
   </div>
 </div>
 
-<!-- TAB 3: POOL TRANSFER -->
+<!-- TAB 4: POOL TRANSFER -->
 <div class="tab-content" id="tab-pool">
   <div class="controls">
     <div class="ctrl-group">
@@ -270,7 +373,7 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
   </div>
 </div>
 
-<!-- TAB 4: TRENDS -->
+<!-- TAB 5: TRENDS -->
 <div class="tab-content" id="tab-trends">
   <div class="controls">
     <div class="ctrl-group">
@@ -304,11 +407,11 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
   </div>
 </div>
 
-<!-- TAB 5: SIMULATOR -->
+<!-- TAB 6: SIMULATOR -->
 <div class="tab-content" id="tab-simulator">
   <div class="grid-2">
     <div class="card">
-      <div class="card-title"><span class="icon">🎛️</span> Adjust Parameters</div>
+      <div class="card-title"><span class="icon">🎛️</span> Adjust OPD Parameters</div>
       <div class="sim-slider-group">
         <label>Weekend Surge Factor <span id="valSurge">1.3</span>x</label>
         <input type="range" id="sliderSurge" min="1" max="2" step="0.05" value="1.3" oninput="runSim()"/>
@@ -329,6 +432,17 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
         <label>Surgical Ratio 1:<span id="valSurgRatio">30</span></label>
         <input type="range" id="sliderSurgRatio" min="15" max="50" step="5" value="30" oninput="runSim()"/>
       </div>
+      <div style="margin-top:16px;border-top:2px solid var(--gray-200);padding-top:16px">
+        <div class="card-title"><span class="icon">🛏️</span> IPD Parameters</div>
+      </div>
+      <div class="sim-slider-group">
+        <label>IPD Adult Ratio 1:<span id="valIpdRatio">8</span></label>
+        <input type="range" id="sliderIpdRatio" min="4" max="12" step="1" value="8" oninput="runSim()"/>
+      </div>
+      <div class="sim-slider-group">
+        <label>IPD Occupied Beds <span id="valIpdBeds">131</span> beds/day</label>
+        <input type="range" id="sliderIpdBeds" min="80" max="180" step="5" value="131" oninput="runSim()"/>
+      </div>
       <div style="margin-top:12px">
         <button class="btn btn-outline btn-sm" onclick="resetSim()">Reset to Default</button>
       </div>
@@ -336,11 +450,19 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
     <div class="card">
       <div class="card-title"><span class="icon">📊</span> Simulation Result</div>
       <div class="sim-result">
-        <div class="big" id="simTotal">58</div>
-        <div class="label">Total RN Required per Day (Weekday)</div>
+        <div class="big" id="simOpdTotal">58</div>
+        <div class="label">OPD RN Required per Day (Weekday)</div>
       </div>
       <div class="sim-result" style="margin-top:8px">
-        <div class="big" id="simWeekend" style="color:var(--orange)">75</div>
+        <div class="big" id="simIpdRn" style="color:var(--orange)">17</div>
+        <div class="label">IPD RN Required per Shift (3 shifts)</div>
+      </div>
+      <div class="sim-result" style="margin-top:8px">
+        <div class="big" id="simTotal" style="color:var(--green)">75</div>
+        <div class="label">Total Concurrent RN Required</div>
+      </div>
+      <div class="sim-result" style="margin-top:8px;background:var(--orange-l);border-color:var(--orange)">
+        <div class="big" id="simWeekend" style="color:var(--orange)">98</div>
         <div class="label">Total RN Required per Day (Weekend)</div>
       </div>
       <canvas id="chartSim" height="200" style="margin-top:16px"></canvas>
@@ -348,7 +470,7 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
   </div>
 </div>
 
-<!-- TAB 6: WORKFLOW -->
+<!-- TAB 7: WORKFLOW -->
 <div class="tab-content" id="tab-workflow">
   <div class="grid-2">
     <div class="card">
@@ -377,10 +499,10 @@ label{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:2px;dis
       <div style="margin-top:24px">
         <div class="card-title"><span class="icon">🎯</span> Success Metrics</div>
         <table style="font-size:13px">
-          <tr><td style="padding:6px 12px;font-weight:600">Forecast Accuracy</td><td style="padding:6px 12px">MAPE &lt; 15%</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:600">Forecast Accuracy</td><td style="padding:6px 12px">MAPE < 15%</td></tr>
           <tr><td style="padding:6px 12px;font-weight:600">Overstaffing Reduction</td><td style="padding:6px 12px">30% within 3 months</td></tr>
           <tr><td style="padding:6px 12px;font-weight:600">Response Time</td><td style="padding:6px 12px">6:00 AM (vs 2:00 PM manual)</td></tr>
-          <tr><td style="padding:6px 12px;font-weight:600">Supervisor Approval</td><td style="padding:6px 12px">&gt; 80%</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:600">Supervisor Approval</td><td style="padding:6px 12px">> 80%</td></tr>
           <tr><td style="padding:6px 12px;font-weight:600">Cost Savings</td><td style="padding:6px 12px">10-15% OT/agency reduction</td></tr>
         </table>
       </div>
@@ -397,6 +519,40 @@ const RAW = {"clinics":{"BEAUTY":{"app":9682,"wi":11318,"total":21000,"wipct":54
 const MONTHLY = {"BEAUTY":{"2025-01":{"APP":581,"WI":758},"2025-02":{"APP":598,"WI":740},"2025-03":{"APP":785,"WI":805},"2025-04":{"APP":659,"WI":748},"2025-05":{"APP":721,"WI":716},"2025-06":{"APP":811,"WI":885},"2025-07":{"APP":750,"WI":885},"2025-08":{"APP":756,"WI":875},"2025-09":{"APP":770,"WI":857},"2025-10":{"APP":800,"WI":969},"2025-11":{"APP":895,"WI":820},"2025-12":{"APP":783,"WI":768},"2026-01":{"APP":0,"WI":1492}},"CAR":{"2025-01":{"APP":2820,"WI":485},"2025-02":{"APP":2779,"WI":469},"2025-03":{"APP":2924,"WI":484},"2025-04":{"APP":2512,"WI":460},"2025-05":{"APP":3041,"WI":524},"2025-06":{"APP":2893,"WI":493},"2025-07":{"APP":2781,"WI":482},"2025-08":{"APP":3285,"WI":547},"2025-09":{"APP":3246,"WI":529},"2025-10":{"APP":3434,"WI":525},"2025-11":{"APP":3221,"WI":528},"2025-12":{"APP":2939,"WI":497},"2026-01":{"APP":3849,"WI":604}},"DEN":{"2025-01":{"APP":1050,"WI":395},"2025-02":{"APP":996,"WI":375},"2025-03":{"APP":1226,"WI":452},"2025-04":{"APP":1067,"WI":427},"2025-05":{"APP":1103,"WI":473},"2025-06":{"APP":1135,"WI":459},"2025-07":{"APP":1122,"WI":556},"2025-08":{"APP":1130,"WI":537},"2025-09":{"APP":1078,"WI":469},"2025-10":{"APP":1279,"WI":552},"2025-11":{"APP":1206,"WI":449},"2025-12":{"APP":1054,"WI":422},"2026-01":{"APP":1006,"WI":472}},"ENT":{"2025-01":{"APP":963,"WI":962},"2025-02":{"APP":968,"WI":893},"2025-03":{"APP":1199,"WI":1215},"2025-04":{"APP":1017,"WI":1037},"2025-05":{"APP":1090,"WI":1081},"2025-06":{"APP":1079,"WI":1151},"2025-07":{"APP":1181,"WI":1255},"2025-08":{"APP":1153,"WI":1265},"2025-09":{"APP":1264,"WI":1207},"2025-10":{"APP":1195,"WI":1325},"2025-11":{"APP":1240,"WI":1203},"2025-12":{"APP":1170,"WI":1090},"2026-01":{"APP":1123,"WI":1147}},"EYE":{"2025-01":{"APP":1520,"WI":716},"2025-02":{"APP":1418,"WI":721},"2025-03":{"APP":1835,"WI":890},"2025-04":{"APP":1640,"WI":785},"2025-05":{"APP":1633,"WI":861},"2025-06":{"APP":1627,"WI":854},"2025-07":{"APP":1680,"WI":853},"2025-08":{"APP":1799,"WI":1076},"2025-09":{"APP":1838,"WI":978},"2025-10":{"APP":1899,"WI":1071},"2025-11":{"APP":1813,"WI":981},"2025-12":{"APP":1663,"WI":870},"2026-01":{"APP":1807,"WI":872}},"GI":{"2025-01":{"APP":1716,"WI":681},"2025-02":{"APP":1714,"WI":692},"2025-03":{"APP":1955,"WI":849},"2025-04":{"APP":1822,"WI":744},"2025-05":{"APP":1791,"WI":801},"2025-06":{"APP":1920,"WI":828},"2025-07":{"APP":1959,"WI":847},"2025-08":{"APP":2042,"WI":927},"2025-09":{"APP":2063,"WI":941},"2025-10":{"APP":2097,"WI":933},"2025-11":{"APP":1964,"WI":843},"2025-12":{"APP":1779,"WI":761},"2026-01":{"APP":1670,"WI":920}},"MED":{"2025-01":{"APP":5176,"WI":3843},"2025-02":{"APP":4856,"WI":3472},"2025-03":{"APP":5574,"WI":4367},"2025-04":{"APP":4908,"WI":4021},"2025-05":{"APP":5456,"WI":4379},"2025-06":{"APP":5362,"WI":4414},"2025-07":{"APP":5624,"WI":4544},"2025-08":{"APP":5913,"WI":5108},"2025-09":{"APP":6166,"WI":4988},"2025-10":{"APP":6268,"WI":5306},"2025-11":{"APP":6012,"WI":4835},"2025-12":{"APP":5488,"WI":4341},"2026-01":{"APP":5666,"WI":5278}},"NEURO":{"2025-01":{"APP":1206,"WI":273},"2025-02":{"APP":1189,"WI":240},"2025-03":{"APP":1278,"WI":316},"2025-04":{"APP":1170,"WI":304},"2025-05":{"APP":1280,"WI":341},"2025-06":{"APP":1317,"WI":326},"2025-07":{"APP":1364,"WI":361},"2025-08":{"APP":1422,"WI":361},"2025-09":{"APP":1417,"WI":347},"2025-10":{"APP":1412,"WI":382},"2025-11":{"APP":1376,"WI":335},"2025-12":{"APP":1274,"WI":288},"2026-01":{"APP":1167,"WI":300}},"ONCO":{"2025-01":{"APP":25,"WI":46},"2025-02":{"APP":2,"WI":41},"2025-03":{"APP":21,"WI":47},"2025-04":{"APP":20,"WI":43},"2025-05":{"APP":24,"WI":43},"2025-06":{"APP":25,"WI":52},"2025-07":{"APP":11,"WI":39},"2025-08":{"APP":24,"WI":47},"2025-09":{"APP":22,"WI":42},"2025-10":{"APP":24,"WI":57},"2025-11":{"APP":23,"WI":44},"2025-12":{"APP":28,"WI":43},"2026-01":{"APP":0,"WI":0}},"ORT":{"2025-01":{"APP":2505,"WI":2245},"2025-02":{"APP":2419,"WI":2102},"2025-03":{"APP":2719,"WI":2576},"2025-04":{"APP":2553,"WI":2297},"2025-05":{"APP":2637,"WI":2533},"2025-06":{"APP":2652,"WI":2584},"2025-07":{"APP":2756,"WI":2701},"2025-08":{"APP":2870,"WI":2760},"2025-09":{"APP":3030,"WI":2813},"2025-10":{"APP":3007,"WI":2901},"2025-11":{"APP":2940,"WI":2697},"2025-12":{"APP":2737,"WI":2428},"2026-01":{"APP":2740,"WI":2874}},"PED":{"2025-01":{"APP":1417,"WI":1262},"2025-02":{"APP":1296,"WI":1229},"2025-03":{"APP":1596,"WI":1734},"2025-04":{"APP":1330,"WI":1291},"2025-05":{"APP":1388,"WI":1314},"2025-06":{"APP":1616,"WI":1742},"2025-07":{"APP":1724,"WI":1919},"2025-08":{"APP":1690,"WI":1895},"2025-09":{"APP":1695,"WI":1743},"2025-10":{"APP":1774,"WI":1916},"2025-11":{"APP":1693,"WI":1703},"2025-12":{"APP":1525,"WI":1521},"2026-01":{"APP":1837,"WI":1317}},"PHS":{"2025-01":{"APP":200,"WI":55},"2025-02":{"APP":218,"WI":44},"2025-03":{"APP":222,"WI":78},"2025-04":{"APP":190,"WI":59},"2025-05":{"APP":208,"WI":67},"2025-06":{"APP":231,"WI":79},"2025-07":{"APP":218,"WI":80},"2025-08":{"APP":209,"WI":74},"2025-09":{"APP":217,"WI":77},"2025-10":{"APP":247,"WI":82},"2025-11":{"APP":243,"WI":75},"2025-12":{"APP":219,"WI":55},"2026-01":{"APP":98,"WI":52}},"SSO":{"2025-01":{"APP":333,"WI":399},"2025-02":{"APP":336,"WI":370},"2025-03":{"APP":437,"WI":521},"2025-04":{"APP":367,"WI":426},"2025-05":{"APP":372,"WI":494},"2025-06":{"APP":416,"WI":505},"2025-07":{"APP":394,"WI":536},"2025-08":{"APP":412,"WI":570},"2025-09":{"APP":417,"WI":538},"2025-10":{"APP":424,"WI":567},"2025-11":{"APP":404,"WI":556},"2025-12":{"APP":405,"WI":475},"2026-01":{"APP":497,"WI":564}},"SUR":{"2025-01":{"APP":2681,"WI":1498},"2025-02":{"APP":2594,"WI":1315},"2025-03":{"APP":2907,"WI":1646},"2025-04":{"APP":2612,"WI":1570},"2025-05":{"APP":2808,"WI":1656},"2025-06":{"APP":2922,"WI":1761},"2025-07":{"APP":2985,"WI":1808},"2025-08":{"APP":3087,"WI":1873},"2025-09":{"APP":3160,"WI":1905},"2025-10":{"APP":3176,"WI":1962},"2025-11":{"APP":3070,"WI":1844},"2025-12":{"APP":2789,"WI":1600},"2026-01":{"APP":2974,"WI":1880}},"WNC":{"2025-01":{"APP":349,"WI":1069},"2025-02":{"APP":307,"WI":894},"2025-03":{"APP":375,"WI":1233},"2025-04":{"APP":370,"WI":1020},"2025-05":{"APP":441,"WI":1198},"2025-06":{"APP":419,"WI":1215},"2025-07":{"APP":399,"WI":1254},"2025-08":{"APP":447,"WI":1322},"2025-09":{"APP":508,"WI":1299},"2025-10":{"APP":488,"WI":1412},"2025-11":{"APP":449,"WI":1279},"2025-12":{"APP":399,"WI":1145},"2026-01":{"APP":613,"WI":1885}},"WOMAN":{"2025-01":{"APP":2398,"WI":1159},"2025-02":{"APP":2194,"WI":1066},"2025-03":{"APP":2706,"WI":1377},"2025-04":{"APP":2358,"WI":1209},"2025-05":{"APP":2504,"WI":1288},"2025-06":{"APP":2593,"WI":1447},"2025-07":{"APP":2567,"WI":1368},"2025-08":{"APP":2710,"WI":1535},"2025-09":{"APP":2792,"WI":1460},"2025-10":{"APP":2873,"WI":1608},"2025-11":{"APP":2743,"WI":1448},"2025-12":{"APP":2631,"WI":1310},"2026-01":{"APP":2239,"WI":1621}}};
 
 const WEEKDAY = {"BEAUTY":{"Mon":72,"Tue":65,"Wed":59,"Thu":62,"Fri":54,"Sat":104,"Sun":88},"CAR":{"Mon":176,"Tue":168,"Wed":158,"Thu":166,"Fri":157,"Sat":88,"Sun":73},"DEN":{"Mon":75,"Tue":78,"Wed":71,"Thu":71,"Fri":65,"Sat":58,"Sun":42},"ENT":{"Mon":111,"Tue":108,"Wed":100,"Thu":102,"Fri":96,"Sat":98,"Sun":82},"EYE":{"Mon":131,"Tue":127,"Wed":120,"Thu":123,"Fri":113,"Sat":78,"Sun":55},"GI":{"Mon":138,"Tue":134,"Wed":123,"Thu":131,"Fri":121,"Sat":65,"Sun":47},"MED":{"Mon":498,"Tue":472,"Wed":459,"Thu":459,"Fri":427,"Sat":376,"Sun":297},"NEURO":{"Mon":83,"Tue":80,"Wed":75,"Thu":75,"Fri":71,"Sat":38,"Sun":28},"ONCO":{"Mon":4,"Tue":3,"Wed":3,"Thu":3,"Fri":3,"Sat":1,"Sun":1},"ORT":{"Mon":256,"Tue":255,"Wed":236,"Thu":244,"Fri":222,"Sat":206,"Sun":165},"PED":{"Mon":156,"Tue":148,"Wed":140,"Thu":140,"Fri":132,"Sat":168,"Sun":136},"PHS":{"Mon":18,"Tue":16,"Wed":14,"Thu":14,"Fri":12,"Sat":1,"Sun":1},"SSO":{"Mon":45,"Tue":43,"Wed":40,"Thu":42,"Fri":39,"Sat":47,"Sun":36},"SUR":{"Mon":232,"Tue":222,"Wed":209,"Thu":218,"Fri":200,"Sat":150,"Sun":115},"WNC":{"Mon":79,"Tue":80,"Wed":71,"Thu":79,"Fri":75,"Sat":102,"Sun":79},"WOMAN":{"Mon":196,"Tue":192,"Wed":183,"Thu":184,"Fri":168,"Sat":154,"Sun":130}};
+
+// ===== HOSPITAL-WIDE OPD DATA (Visit/Day) =====
+const OPD_VISIT_DATA = {
+  months: ["2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02"],
+  opd_2024: [1466,1456,1439,1338,1405,1505,1460,1502,1563,1440,1488,1454],
+  opd_2025: [1466,1580,1471,1363,1570,1553,1375,1379,1476,1358,1446,1125],
+  opd_2026: [1125,1143],
+  get_all_opd(){return [...this.opd_2024,...this.opd_2025,...this.opd_2026]},
+  avg_2025: 1430
+};
+
+// ===== IPD DATA (Admit/Day and Bed-Day) =====
+const IPD_DATA = {
+  months_adopt: ["2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02"],
+  admit_2024: [66,66,65,60,64,69,63,65,67,54,58,62],
+  admit_2025: [56,72,65,55,59,60,52,53,52,46,59,47],
+  admit_2026: [45,50],
+  bed_2024: [141,151,144,133,134,147,136,145,149,121,131,143],
+  bed_2025: [121,167,142,124,130,127,118,118,118,106,117,109],
+  bed_2026: [98,109],
+  get_all_admit(){return [...this.admit_2024,...this.admit_2025,...this.admit_2026]},
+  get_all_beds(){return [...this.bed_2024,...this.bed_2025,...this.bed_2026]},
+  avg_admit_2025: 58,
+  avg_beds_2025: 131
+};
+
+// IPD Staffing Calc
+function calcIpdRn(beds, adultRatio=8, pedRatio=6, pedPct=0.25){
+  const adultBeds = Math.round(beds * (1 - pedPct));
+  const pedBeds = Math.round(beds * pedPct);
+  const adultRn = Math.ceil(adultBeds / adultRatio);
+  const pedRn = Math.ceil(pedBeds / pedRatio);
+  return adultRn + pedRn;
+}
 
 // ===== CONFIG =====
 const RATIOS = {MED:50,PED:40,ENT:50,EYE:50,GI:50,CAR:40,NEURO:40,PHS:50,DEN:30,SUR:30,ORT:30,BEAUTY:40,WOMAN:40,WNC:50,SSO:50,ONCO:30};
@@ -560,15 +716,94 @@ document.getElementById('dateDisplay').textContent = now.toLocaleDateString('th-
 document.getElementById('planDate').valueAsDate = now;
 onDateChange();
 
-// ===== INIT DASHBOARD =====
+// ===== HOSPITAL OVERVIEW TAB =====
+function initOverview(){
+  // KPIs
+  const opdAvg2025 = OPD_VISIT_DATA.avg_2025;
+  const ipdBeds = IPD_DATA.avg_beds_2025;
+  const ipdRn = calcIpdRn(ipdBeds);
+  const opdRn = computeTotalRN('weekday');
+  const totalRn = opdRn + ipdRn;
+
+  document.getElementById('overviewKPI').innerHTML = `
+    <div class="kpi blue"><div class="kpi-label">Avg OPD Visit/Day (2025)</div><div class="kpi-value">${fmt(opdAvg2025)}</div><div class="kpi-sub">Hospital-wide, exc. mobile</div><div class="kpi-icon">📊</div></div>
+    <div class="kpi green"><div class="kpi-label">Avg IPD Beds/Day (2025)</div><div class="kpi-value">${fmt(ipdBeds)}</div><div class="kpi-sub">Occupied beds, all units</div><div class="kpi-icon">🛏️</div></div>
+    <div class="kpi orange"><div class="kpi-label">OPD RN Required</div><div class="kpi-value">${opdRn}</div><div class="kpi-sub">Weekday, with buffer</div><div class="kpi-icon">👩‍⚕️</div></div>
+    <div class="kpi purple"><div class="kpi-label">IPD RN Required</div><div class="kpi-value">${ipdRn}</div><div class="kpi-sub">Per shift (3 shifts/day)</div><div class="kpi-icon">🛏️</div></div>
+    <div class="kpi red"><div class="kpi-label">Total Concurrent RN</div><div class="kpi-value">${totalRn}</div><div class="kpi-sub">OPD + IPD combined</div><div class="kpi-icon">🔥</div></div>
+  `;
+
+  // OPD trend chart
+  const opdMonths = OPD_VISIT_DATA.months.filter((_,i)=>i>=12); // Show 2025-2026 only for clarity
+  const opdVals = OPD_VISIT_DATA.get_all_opd().slice(12);
+  makeChart('chartOpdTrend',{
+    type:'line',
+    data:{labels:opdMonths,datasets:[{
+      label:'OPD Visit/Day',
+      data:opdVals,
+      borderColor:PAL.blue,
+      backgroundColor:'rgba(59,130,246,.1)',
+      fill:true,
+      tension:.4,
+      pointRadius:4,
+      pointBackgroundColor:PAL.blue
+    }]},
+    options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v.toLocaleString()}}}}
+  });
+
+  // IPD trend chart
+  const ipdMonths = IPD_DATA.months_adopt.filter((_,i)=>i>=12);
+  const ipdAdmit = IPD_DATA.get_all_admit().slice(12);
+  const ipdBeds_ = IPD_DATA.get_all_beds().slice(12);
+  makeChart('chartIpdTrend',{
+    type:'line',
+    data:{labels:ipdMonths,datasets:[
+      {label:'IPD Admit/Day',data:ipdAdmit,borderColor:PAL.orange,yAxisID:'y',tension:.4,pointRadius:4},
+      {label:'IPD Bed-Day (Occupied)',data:ipdBeds_,borderColor:PAL.red,yAxisID:'y1',tension:.4,pointRadius:4}
+    ]},
+    options:{responsive:true,plugins:{legend:{position:'top'}},scales:{
+      y:{type:'linear',position:'left',beginAtZero:true},
+      y1:{type:'linear',position:'right',beginAtZero:true}
+    }}
+  });
+
+  // Overview table
+  const tbody = document.querySelector('#tblOverview tbody');
+  const tableRows = [];
+  const allMonths = OPD_VISIT_DATA.months;
+  const allOpd = OPD_VISIT_DATA.get_all_opd();
+  const allAdmit = IPD_DATA.get_all_admit();
+  const allBeds = IPD_DATA.get_all_beds();
+
+  for(let i=0; i<allMonths.length; i++){
+    const oVisit = allOpd[i];
+    const iAdmit = allAdmit[i];
+    const iBeds = allBeds[i];
+    const oRn = Math.round((oVisit / 50) * 1.15); // rough estimate
+    const iRn = calcIpdRn(iBeds);
+    tableRows.push({month:allMonths[i],oVisit,oRn,iAdmit,iBeds,iRn,total:oRn+iRn});
+  }
+
+  tbody.innerHTML = tableRows.map(r=>`<tr>
+    <td><strong>${r.month}</strong></td>
+    <td class="num">${r.oVisit}</td>
+    <td class="num">${r.oRn}</td>
+    <td class="num">${r.iAdmit}</td>
+    <td class="num">${r.iBeds}</td>
+    <td class="num">${r.iRn}</td>
+    <td class="num" style="background:var(--blue-bg);font-weight:700">${r.total}</td>
+  </tr>`).join('');
+}
+
+// ===== INIT DASHBOARD (OPD only) =====
 function initDashboard(){
   // KPIs
   const totalRN = computeTotalRN('weekday');
   const weekendRN = computeTotalRN('weekend');
   const avgDaily = Math.round(grandTotal/420);
   document.getElementById('kpiRow').innerHTML = `
-    <div class="kpi blue"><div class="kpi-label">Total Visits (14M)</div><div class="kpi-value">${fmt(grandTotal)}</div><div class="kpi-sub">16 Clinics, Jan 2025 - Feb 2026</div><div class="kpi-icon">📊</div></div>
-    <div class="kpi green"><div class="kpi-label">Avg Daily Volume</div><div class="kpi-value">${fmt(avgDaily)}</div><div class="kpi-sub">All clinics combined</div><div class="kpi-icon">📈</div></div>
+    <div class="kpi blue"><div class="kpi-label">Total OPD Visits (14M)</div><div class="kpi-value">${fmt(grandTotal)}</div><div class="kpi-sub">16 Clinics, Jan 2025 - Feb 2026</div><div class="kpi-icon">📊</div></div>
+    <div class="kpi green"><div class="kpi-label">Avg Daily OPD Volume</div><div class="kpi-value">${fmt(avgDaily)}</div><div class="kpi-sub">All clinics combined</div><div class="kpi-icon">📈</div></div>
     <div class="kpi orange"><div class="kpi-label">RN/Day (Weekday)</div><div class="kpi-value">${totalRN}</div><div class="kpi-sub">With walk-in buffer</div><div class="kpi-icon">👩‍⚕️</div></div>
     <div class="kpi red"><div class="kpi-label">RN/Day (Weekend)</div><div class="kpi-value">${weekendRN}</div><div class="kpi-sub">+${Math.round((weekendRN/totalRN-1)*100)}% surge</div><div class="kpi-icon">🔥</div></div>
     <div class="kpi purple"><div class="kpi-label">Walk-in Ratio</div><div class="kpi-value">41%</div><div class="kpi-sub">System-wide average</div><div class="kpi-icon">🎯</div></div>
@@ -723,6 +958,11 @@ function generatePlan(){
   const totalFixed = results.reduce((s,r)=>s+r.rnFixed,0);
   const poolRN = totalRN - totalFixed;
 
+  // IPD staffing for this day
+  const ipdBeds = IPD_DATA.avg_beds_2025; // Use average
+  const ipdRN = calcIpdRn(ipdBeds);
+  const totalOpdIpd = totalRN + ipdRN;
+
   // Build context label
   const holName = isNaN(selDate.getTime()) ? null : getHolidayName(selDate);
   const thaiDate = isNaN(selDate.getTime()) ? '' : selDate.toLocaleDateString('th-TH',{weekday:'short',day:'numeric',month:'short',year:'2-digit'});
@@ -731,10 +971,10 @@ function generatePlan(){
 
   // KPIs
   document.getElementById('planKPI').innerHTML = `
-    <div class="kpi blue"><div class="kpi-label">Predicted Total</div><div class="kpi-value">${fmt(totalPred)}</div><div class="kpi-sub">${thaiDate} (${dayLabel})${scenarioLabel}</div></div>
-    <div class="kpi green"><div class="kpi-label">Total RN Needed</div><div class="kpi-value">${totalRN}</div><div class="kpi-sub">Including ${(totalRN-totalFixed)} buffer RN</div></div>
-    <div class="kpi orange"><div class="kpi-label">Fixed RN</div><div class="kpi-value">${totalFixed}</div><div class="kpi-sub">Base requirement</div></div>
-    <div class="kpi purple"><div class="kpi-label">Pool RN Buffer</div><div class="kpi-value">${poolRN}</div><div class="kpi-sub">Flexible allocation</div></div>
+    <div class="kpi blue"><div class="kpi-label">Predicted OPD Total</div><div class="kpi-value">${fmt(totalPred)}</div><div class="kpi-sub">${thaiDate} (${dayLabel})${scenarioLabel}</div></div>
+    <div class="kpi green"><div class="kpi-label">OPD RN Needed</div><div class="kpi-value">${totalRN}</div><div class="kpi-sub">Including ${(totalRN-totalFixed)} buffer RN</div></div>
+    <div class="kpi orange"><div class="kpi-label">IPD RN Required</div><div class="kpi-value">${ipdRN}</div><div class="kpi-sub">Per shift (${IPD_DATA.avg_beds_2025} beds avg)</div></div>
+    <div class="kpi purple"><div class="kpi-label">Total RN (OPD+IPD)</div><div class="kpi-value">${totalOpdIpd}</div><div class="kpi-sub">Combined concurrent</div></div>
   `;
 
   // Plan cards
@@ -956,12 +1196,16 @@ function runSim(){
   const bufPct=+document.getElementById('sliderBuffer').value;
   const genRatio=+document.getElementById('sliderRatio').value;
   const surgRatio=+document.getElementById('sliderSurgRatio').value;
+  const ipdRatio=+document.getElementById('sliderIpdRatio').value;
+  const ipdBeds=+document.getElementById('sliderIpdBeds').value;
 
   document.getElementById('valSurge').textContent=surge.toFixed(2);
   document.getElementById('valPool').textContent=poolSize;
   document.getElementById('valBuffer').textContent=bufPct;
   document.getElementById('valRatio').textContent=genRatio;
   document.getElementById('valSurgRatio').textContent=surgRatio;
+  document.getElementById('valIpdRatio').textContent=ipdRatio;
+  document.getElementById('valIpdBeds').textContent=ipdBeds;
 
   const surgical = ['SUR','ORT','DEN','ONCO'];
   const specialty = ['CAR','NEURO','PED','WOMAN','BEAUTY'];
@@ -978,15 +1222,20 @@ function runSim(){
     return {c,wdRN,weRN};
   });
 
-  document.getElementById('simTotal').textContent=wdTotal;
-  document.getElementById('simWeekend').textContent=weTotal;
+  const ipdRnWd = calcIpdRn(ipdBeds, ipdRatio);
+  const ipdRnWe = calcIpdRn(Math.round(ipdBeds*1.15), ipdRatio); // slight weekend increase
+
+  document.getElementById('simOpdTotal').textContent=wdTotal;
+  document.getElementById('simIpdRn').textContent=ipdRnWd;
+  document.getElementById('simTotal').textContent=wdTotal+ipdRnWd;
+  document.getElementById('simWeekend').textContent=weTotal+ipdRnWe;
 
   const sorted = perClinic.sort((a,b)=>b.wdRN-a.wdRN);
   makeChart('chartSim',{
     type:'bar',
     data:{labels:sorted.map(r=>r.c),datasets:[
-      {label:'Weekday RN',data:sorted.map(r=>r.wdRN),backgroundColor:'rgba(59,130,246,.7)',borderRadius:4},
-      {label:'Weekend RN',data:sorted.map(r=>r.weRN),backgroundColor:'rgba(239,68,68,.5)',borderRadius:4}
+      {label:'Weekday RN (OPD)',data:sorted.map(r=>r.wdRN),backgroundColor:'rgba(59,130,246,.7)',borderRadius:4},
+      {label:'Weekend RN (OPD)',data:sorted.map(r=>r.weRN),backgroundColor:'rgba(239,68,68,.5)',borderRadius:4}
     ]},
     options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}
   });
@@ -998,10 +1247,13 @@ function resetSim(){
   document.getElementById('sliderBuffer').value=15;
   document.getElementById('sliderRatio').value=50;
   document.getElementById('sliderSurgRatio').value=30;
+  document.getElementById('sliderIpdRatio').value=8;
+  document.getElementById('sliderIpdBeds').value=131;
   runSim();
 }
 
 // ===== INIT =====
+initOverview();
 initDashboard();
 </script>
 </body>
