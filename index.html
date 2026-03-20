@@ -695,17 +695,15 @@ function getConcurrent(arrivals) {
 }
 
 // Compute shift RN using REAL per-clinic shift distribution
+// Ratio (e.g. 1:50) means 1 RN handles 50 patients per full day
+// For shifts: RN = shift_patients / ratio * (1 + buffer)
 function calcShiftRN(dailyVol, ratio, bufferPct, clinic) {
   const sp = getShiftPatients(clinic||'MED', dailyVol);
-  // Peak factor within shift (peak hour vs avg hour)
-  const peakF = {AM:1.35, PM:1.15, EVE:1.2};
   const result = {};
   for(const shift of ['AM','PM','EVE']){
     const pts = sp[shift];
-    const avgConc = pts / SHIFT_HOURS[shift]; // avg concurrent per hour
-    const peakConc = avgConc * peakF[shift];
-    const rnRaw = peakConc / ratio;
-    result[shift] = Math.max(1, Math.round(rnRaw * (1+bufferPct/100)));
+    const rnRaw = pts / ratio;
+    result[shift] = Math.max(1, Math.ceil(rnRaw * (1+bufferPct/100)));
   }
   return result;
 }
